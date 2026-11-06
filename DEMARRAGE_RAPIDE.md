@@ -22,15 +22,21 @@ Gardez le terminal ouvert. Pour arrêter : Ctrl+C.
 4. Enregistrez la facture puis rouvrez-la pour générer le PDF. Les liens courriel et SMS ouvrent les applications de votre appareil. **La pièce jointe PDF doit être ajoutée manuellement au courriel.** Aucun envoi automatique n’est effectué.
 5. Passez à **Gestion Entreprise** : renseignez les vrais numéros de taxes et l’adresse Interac avant d’envoyer des factures réelles.
 6. Testez les dépenses, le rapport de taxes par mois, trimestre ou année, et le calculateur de soumission.
-7. Dans les réglages, exportez une sauvegarde JSON. La restauration remplace les données après confirmation.
+7. Dans l’application Windows, ouvrez les réglages et exportez une copie de sécurité sur une clé USB. La restauration cherche les copies reconnues sur la clé et remplace les données après confirmation.
 
 Les clients, adresses, factures et rendez-vous de départ sont fictifs. Les courriels utilisent example.com. Ne contactez pas les numéros de démonstration.
 
 ## 3. Sauvegarde et confidentialité
 
-Les données sont conservées dans le stockage local du navigateur, pour ce profil et cette adresse. Pas de compte, de serveur de données ni de synchronisation entre appareils. Effacer les données de navigation peut supprimer les informations. Le passage du navigateur à Electron nécessite une exportation puis une restauration JSON.
+Les données sont conservées dans le stockage local du navigateur ou du profil Electron, pour cet appareil et cette adresse. Pas de compte, de serveur de données ni de synchronisation entre appareils. Effacer les données de navigation peut supprimer les informations. Les données du navigateur et celles de l’application Windows sont séparées.
 
-Exportez régulièrement une copie via **Réglages → Exporter une copie de sécurité**. Le téléchargement va dans le dossier choisi par le navigateur, pas directement sur le Bureau. Conservez une copie sur un autre support. Les données ne sont pas chiffrées : protégez votre session Windows et vos sauvegardes. Cette version est destinée à un usage local, individuel, pas à un service public multiutilisateur.
+Dans **l’application Windows**, utilisez **Réglages → Exporter une copie de sécurité**. Insérez une clé USB; l’application la détecte et vous demande de la choisir si plusieurs clés sont branchées. Sans clé, elle demande d’en insérer une et vérifie automatiquement sa connexion. La copie est écrite dans **Sauvegardes MM** à la racine de la clé, avec la date du jour et un suffixe si nécessaire. Aucun sélecteur de dossier interne ni téléchargement de secours n’est proposé, et une copie existante n’est pas écrasée.
+
+**Restaurer une copie JSON** cherche les fichiers JSON MM valides dans **Sauvegardes MM** et à la racine de la clé. Choisissez la copie, puis confirmez le remplacement des données actuelles. Les fichiers non reconnus sont ignorés. Les anciennes copies exportées ailleurs peuvent être copiées à la racine de la clé pour être reconnues. Limite de lecture : 25 Mo par fichier; les 200 premières copies valides sont proposées.
+
+**Dans un navigateur**, ces deux boutons expliquent que l’accès direct aux lecteurs USB nécessite l’application Windows. Le navigateur ne peut pas garantir qu’un dossier choisi est une clé USB; aucun téléchargement ou importation depuis le disque interne n’est proposé à la place. Pour passer d’une ancienne version navigateur à Windows, placez une ancienne copie JSON valide sur la clé et restaurez-la dans Windows. Les données déjà présentes uniquement dans le navigateur ne sont pas transférées automatiquement.
+
+Les données ne sont pas chiffrées : protégez votre session Windows et vos sauvegardes. Cette version est destinée à un usage local, individuel, pas à un service public multiutilisateur.
 
 La météo utilise Open-Meteo sur demande (Internet requis); seules les coordonnées approximatives de la ville sont transmises. La carte ouvre Google Maps avec l’adresse choisie. Les polices Google sont téléchargées si Internet est disponible; une police système prend le relais hors ligne.
 
@@ -80,7 +86,8 @@ Le statut de facture se sélectionne manuellement : vérifiez les retards. Les r
 - `src/data.js` : données fictives et calculs monétaires.
 - `src/pdf.js` : exports PDF.
 - `src/style.css` : interface responsive sauge / vert forêt.
-- `electron/main.cjs` : fenêtre Windows et ouverture des liens externes.
+- `electron/main.cjs`, `preload.cjs`, `usb.cjs`, `backup.cjs` : fenêtre Windows, pont sécurisé, détection des volumes USB amovibles et lecture/écriture des sauvegardes.
+- `src/UsbBackup.jsx` : parcours USB dans les réglages, messages d’insertion, choix de clé/copie et confirmation.
 
 Le monogramme MM est **provisoire**. Pour intégrer le logo officiel, remplacez le SVG du composant `Logo` dans `src/UI.jsx` et adaptez l’en-tête de `src/pdf.js`.
 
@@ -89,7 +96,7 @@ Le monogramme MM est **provisoire**. Pour intégrer le logo officiel, remplacez 
 - Remplacer toutes les données fictives et compléter l’entreprise.
 - Vérifier une facture de 100 $ avant taxes : TPS 5 $, TVQ 9,98 $, total 114,98 $.
 - Tester un PDF multi-services et les coordonnées de paiement.
-- Exporter, puis restaurer une sauvegarde de test.
+- Sur Windows avec une vraie clé USB : exporter sans clé (message d’insertion), brancher la clé, exporter, puis restaurer la copie après confirmation. Vérifier aussi le choix entre deux clés, une clé pleine ou protégée en écriture et le retrait pendant l’opération.
 - Valider les rapports et les échéances avec le comptable.
 - Auditer et actualiser les dépendances avant diffusion; tester sur le poste Windows cible.
 
@@ -168,3 +175,11 @@ Le bouton « Nouveau rendez-vous » du calendrier et l’ajout de travail depuis
 **Créer la facture unique et le travail** enregistre ensemble une facture et une seule intervention au calendrier, sans rotation. Le service/prix habituel du client est prérempli et reste ajustable. Enregistrez d’abord, puis rouvrez la facture pour télécharger le PDF ou utiliser les liens d’envoi; cela évite de sortir une facture ponctuelle sans entrée de travail. Modifier cette facture ne crée aucune nouvelle intervention. La date et l’heure du travail déjà créé se corrigent depuis « Modifier le rendez-vous » dans l’agenda.
 
 Les travaux récurrents continuent d’être planifiés automatiquement avec leurs factures à partir de la fiche client. Test : `node tests/unique-invoice.mjs`.
+
+## Mise à jour — Sauvegarde et restauration sur clé USB
+
+Les réglages n’utilisent plus le téléchargement navigateur ni le sélecteur de fichier JSON pour les copies de sécurité. Les deux actions passent par un pont Electron limité aux lecteurs USB amovibles détectés par Windows (bus USB avec lettre de lecteur). Le disque interne, les lecteurs réseau et les chemins arbitraires ne sont pas proposés. Chaque opération revérifie la clé sélectionnée avant d’accéder aux fichiers.
+
+La détection Windows utilise PowerShell et les informations CIM de Windows, sans module natif supplémentaire. Les clés doivent être montées et accessibles dans l’explorateur Windows. Les lecteurs BitLocker verrouillés doivent être déverrouillés dans Windows avant utilisation. Les disques USB externes déclarés « fixes » par Windows ne sont pas assimilés à une clé amovible.
+
+Validation dans l’environnement de développement : compilation web, tests Node du format JSON, des chemins autorisés, de la découverte racine/dossier, du refus des fichiers invalides et de l’export sans écrasement (`node test/usb-backup.mjs`). Test Chromium avec pont USB simulé : absence de repli navigateur, insertion automatique, export USB et restauration seulement après confirmation (`npm install --no-save @playwright/test`, serveur Vite actif, puis `node test/usb-ui.mjs`). **La détection matérielle PowerShell et les opérations sur une vraie clé USB n’ont pas pu être exécutées sur cet environnement Linux : les valider sur le poste Windows cible avant usage réel.**
