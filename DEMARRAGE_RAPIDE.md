@@ -14,6 +14,8 @@ npm run dev
 Ouvrez l’adresse affichée par Vite (habituellement http://localhost:5173).
 Gardez le terminal ouvert. Pour arrêter : Ctrl+C.
 
+Pour obtenir plutôt une **application Windows autonome (`.exe`)**, voir la section 5.
+
 ## 2. Premier essai (5 minutes)
 
 1. Sur l’accueil, choisissez **Gestion Client**. Les rendez-vous fictifs apparaissent à la date du premier lancement.
@@ -48,25 +50,59 @@ npm run build
 
 Les fichiers sont créés dans `dist/`. Pour un déploiement réel, utiliser un hébergement statique HTTPS. Cette version conserve toujours les données localement sur chaque appareil.
 
-## 5. Application Windows (Electron)
+## 5. Application Windows (fichier `.exe`)
 
-Sur un ordinateur **Windows 10/11 64 bits**, avec Node.js installé :
+Le dépôt produit deux fichiers `.exe` pour **Windows 10/11 64 bits** :
+
+| Fichier | Usage |
+| --- | --- |
+| `Gestion-MM-Setup-1.0.0.exe` | Installateur : installe l’application, crée les raccourcis du bureau et du menu Démarrer, puis se lance comme un programme normal. |
+| `Gestion-MM-Portable-1.0.0.exe` | Version portable : un seul fichier, aucun installateur, pratique pour une clé USB ou un deuxième poste. |
+
+### A. Compiler sur un poste Windows (avec Node.js installé)
 
 ```sh
 npm install
-npm run build
-npm run desktop
-```
-
-Pour produire l’installateur Windows :
-
-```sh
 npm run windows
 ```
 
-L’installateur NSIS est écrit dans `release/`. Les premiers téléchargements Electron peuvent nécessiter Internet. Un installateur non signé peut déclencher SmartScreen : pour une distribution publique, prévoir un certificat et une signature de code.
+Les deux `.exe` sont écrits dans `release/`. Pour n’en produire qu’un :
 
-**La compilation web a été vérifiée dans l’environnement de développement. L’exécutable Windows n’a pas été compilé ni testé ici.** Tester l’installation, les téléchargements PDF, les associations mail/SMS et la sauvegarde sur le poste Windows cible.
+```sh
+npm run windows:installer   # installateur seulement
+npm run windows:portable    # version portable seulement
+```
+
+Pour lancer l’application sans la compiler :
+
+```sh
+npm run desktop
+```
+
+### B. Compiler sans poste Windows (GitHub Actions)
+
+Le fichier de tâche `.github/workflows/build-windows.yml` compile les `.exe` sur un serveur Windows de GitHub :
+
+1. Dans le dépôt, ouvrir l’onglet **Actions**.
+2. Choisir **Build Windows app (.exe)**, puis **Run workflow**.
+3. À la fin (environ 5 à 10 minutes), télécharger l’artefact **Gestion-MM-Windows** : il contient les deux `.exe`.
+
+Pour publier les `.exe` dans une version du dépôt, pousser un tag :
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Les deux `.exe` sont alors joints automatiquement à la publication GitHub, donc téléchargeables par un lien stable à envoyer aux utilisateurs.
+
+### Remarques
+
+- Les premiers téléchargements Electron et NSIS nécessitent Internet pendant la compilation.
+- Les `.exe` **ne sont pas signés** : Windows SmartScreen peut afficher un avertissement au premier lancement (« Informations complémentaires » → « Exécuter quand même »). Pour une distribution publique, prévoir un certificat de signature de code.
+- Les données restent dans le profil Windows de l’utilisateur (`%APPDATA%`), et la désinstallation ne les efface pas.
+- L’icône de l’application et des raccourcis se trouve dans `build/icon.ico` (généré depuis le monogramme MM).
+- **La compilation web et la configuration d’empaquetage ont été vérifiées ici, mais la compilation réelle du `.exe` n’a pas pu être exécutée dans cet environnement Linux (accès Internet limité aux serveurs de compilation).** Tester l’installation, les téléchargements PDF, les associations mail/SMS et la sauvegarde sur le poste Windows cible.
 
 ## 6. Fiscalité : périmètre et limites
 
